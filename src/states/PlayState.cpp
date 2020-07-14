@@ -10,3 +10,7 @@ void PlayState::onExit()
 {
 	std::cout << "Exiting play state..." << std::endl;
 }
+
+void PlayState::render()
+{
+}

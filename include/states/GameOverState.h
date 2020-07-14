@@ -4,13 +4,13 @@
 #include "TextureManager.h"
 #include "SDL.h"
 
-class PauseState : public IState
+class GameOverState : public IState
 {
 private:
 	TextureManager* textureManager;
-	SDL_Rect gameCamera;
+	SDL_Rect& gameCamera;
 public:
-	PauseState(TextureManager* textureManager, SDL_Rect& gameCamera);
+	GameOverState(TextureManager* textureManager, SDL_Rect& gameCamera);
 	virtual void onEnter();
 	virtual void onExit();
 	virtual void render();

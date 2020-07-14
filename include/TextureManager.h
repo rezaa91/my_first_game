@@ -10,8 +10,9 @@ class TextureManager
 private:
 	SDL_Renderer* renderer;
 	std::map<std::string, SDL_Texture*> textures;
+	SDL_Rect& gameCamera;
 public:
-	TextureManager(SDL_Renderer* renderer);
+	TextureManager(SDL_Renderer* renderer, SDL_Rect& gameCamera);
 	void loadTexture(const std::string path, const std::string id);
 	void draw(
 		std::string id,
@@ -22,5 +23,6 @@ public:
 		const int currentColumn = 0,
 		const int currentRow = 0
 	);
+	void removeTexture(const std::string id);
 };
 

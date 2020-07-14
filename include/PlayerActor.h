@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include "SDL.h"
 #include "BaseActor.h"
 #include "Vector2D.h"
@@ -15,9 +16,10 @@ private:
 	Vector2D acceleration;
 	bool isJumping = false;
 	void jump();
+
 public:
 	PlayerActor(TextureManager* textureManager, InputHandler* inputHandler, const LoaderParams params);
-	virtual void update();
+	virtual void update(SDL_Rect* camera);
 	virtual void render(TextureManager* textureManager);
 };
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SDL.h"
 #include "BaseActor.h"
 #include "TextureManager.h"
 #include "LoaderParams.h"
@@ -14,7 +15,7 @@ protected:
 	bool isReturning = false;
 public:
 	EnemyActor(TextureManager* textureManager, const LoaderParams params, const int perimeterToCover = 200);
-	virtual void update();
+	virtual void update(SDL_Rect* camera);
 	virtual void render(TextureManager* textureManager);
 };
 

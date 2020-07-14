@@ -5,16 +5,20 @@
 #include "LoaderParams.h"
 #include "states\PauseState.h"
 #include "states\PlayState.h"
+#include "states\GameOverState.h"
+#include "Map.h"
 
 void const Game::createGameObjects()
 {
-	PlayerActor* player = new PlayerActor{ textureManager, inputHandler, LoaderParams{ "./assets/player.png", "player", 32, 32, 60, 60, 3 } };
-	gameObjects.push_back(player);
+	// 4 rows from the bottom of 32px is the ground
+	const int groundLevel = Config::HEIGHT - (4 * Config::TILE_HEIGHT);
 
-	EnemyActor* enemy1 = new EnemyActor{ textureManager, LoaderParams{"./assets/player.png", "enemy", 32, 32, 200, 60, 3} };
+	player = new PlayerActor{ textureManager, inputHandler, LoaderParams{ "./assets/player.png", "player", 32, 32, 60, groundLevel - 32, 3 } };
+
+	EnemyActor* enemy1 = new EnemyActor{ textureManager, LoaderParams{"./assets/enemy.png", "enemy", 32, 32, 200, groundLevel - 32, 2} };
 	gameObjects.push_back(enemy1);
 
-	EnemyActor* enemy2 = new EnemyActor{ textureManager, LoaderParams{"./assets/player.png", "enemy", 32, 32, 600, 60, 3}, 150 };
+	EnemyActor* enemy2 = new EnemyActor{ textureManager, LoaderParams{"./assets/enemy.png", "enemy", 32, 32, 600, groundLevel - 32, 2}, 150 };
 	gameObjects.push_back(enemy2);
 }
 
@@ -37,36 +41,86 @@ Game::Game()
 	}
 
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-	isRunning = true;
-	inputHandler = new InputHandler{};
-	textureManager = new TextureManager{renderer};
-	stateManager = new StateManager(new PauseState());
 
-	this->createGameObjects();
+	this->init();
 }
 
 Game::~Game()
 {
 	std::cout << "Cleaning up..." << std::endl;
 
+	this->clean();
 	SDL_DestroyWindow(window);
 	SDL_DestroyRenderer(renderer);
 }
 
+void Game::init()
+{
+	camera = { 0, 0, Config::WIDTH / 2, Config::HEIGHT / 2 };
+	isRunning = true;
+	inputHandler = new InputHandler{};
+	textureManager = new TextureManager{ renderer, camera };
+	stateManager = new StateManager(new PlayState{});
+	collisionManager = new CollisionManager{};
+
+	this->createGameObjects();
+	Map map{ textureManager };
+	tiles = map.loadMap("./assets/levels/level1.map");
+}
+
+void Game::updateCamera()
+{
+	const int playerX = player->getPosition().getX();
+	camera.x = playerX - camera.w;
+
+	if (camera.x < 0) {
+		camera.x = 0;
+	}
+
+	if (camera.x > camera.w) {
+		camera.x = camera.w;
+	}
+}
+
 void Game::update()
 {
-	// we don't want to update our game objects if we are in a paused state
-	if (!isPaused) {
-		for (auto& object : gameObjects)
-		{
-			object->update();
-		}
+	if (isPaused || isGameOver) {
+		return;
 	}
+
+	this->updateCamera();
+
+	player->update(&camera);
+
+	for (auto& object : gameObjects)
+	{
+		if (collisionManager->isCollision(player->getRect(), object->getRect())) {
+			isGameOver = true;
+		}
+
+		object->update(&camera);
+	}
+
+	for (auto& tile : tiles)
+	{
+		tile->update(&camera);
+	}
+
+	checkGameOver();
 }
 
 void Game::render()
 {
 	SDL_RenderClear(renderer);
+
+	for (auto& tile : tiles)
+	{
+		tile->render(textureManager);
+	}
+
+	player->render(textureManager);
+
+	stateManager->render();
 
 	for (auto& object : gameObjects)
 	{
@@ -88,7 +142,16 @@ void Game::handleEvents()
 	case SDL_KEYUP:
 		// escape button used to toggle between play and paused states
 		if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-			isPaused ? stateManager->pushState(new PlayState()) : stateManager->pushState(new PauseState());
+			if (isGameOver) {
+				stateManager->pushState(new PlayState{});
+				isGameOver = false;
+				this->clean();
+				this->init();
+
+				return;
+			}
+
+			isPaused ? stateManager->pushState(new PlayState{}) : stateManager->pushState(new PauseState{textureManager, camera});
 			isPaused = !isPaused;
 		}
 	}
@@ -113,4 +176,21 @@ void Game::run()
 			SDL_Delay(frameDelay - frameTime);
 		}
 	}
+}
+
+void Game::checkGameOver()
+{
+	if (isGameOver) {
+		stateManager->pushState(new GameOverState{textureManager, camera});
+	}
+}
+
+void Game::clean()
+{
+	delete inputHandler;
+	delete textureManager;
+	delete stateManager;
+	delete collisionManager;
+	delete player;
+	gameObjects.clear();
 }

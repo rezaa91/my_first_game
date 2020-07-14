@@ -1,8 +1,8 @@
 #include "TextureManager.h"
 #include "SDL_image.h"
 
-TextureManager::TextureManager(SDL_Renderer* renderer)
-	:renderer(renderer)
+TextureManager::TextureManager(SDL_Renderer* renderer, SDL_Rect& gameCamera)
+	:renderer(renderer), gameCamera(gameCamera)
 {}
 
 void TextureManager::loadTexture(const std::string path, const std::string id)
@@ -45,8 +45,13 @@ void TextureManager::draw(
 	src.y = currentColumn * h;
 	src.w = dest.w = w;
 	src.h = dest.h = h;
-	dest.x = transform.getX();
+	dest.x = transform.getX() - gameCamera.x;
 	dest.y = transform.getY();
 
 	SDL_RenderCopyEx(renderer, textures.at(id), &src, &dest, 0, 0, flip);
+}
+
+void TextureManager::removeTexture(const std::string id)
+{
+	textures.erase(id);
 }

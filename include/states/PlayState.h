@@ -7,5 +7,6 @@ class PlayState : public IState
 public:
 	virtual void onEnter();
 	virtual void onExit();
+	virtual void render();
 };
 

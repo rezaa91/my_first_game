@@ -15,3 +15,8 @@ void StateManager::pushState(IState* state)
 	states.push(state);
 	state->onEnter();
 }
+
+void StateManager::render()
+{
+	states.top()->render();
+}

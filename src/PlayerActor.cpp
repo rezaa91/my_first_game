@@ -3,22 +3,38 @@
 
 void PlayerActor::jump()
 {
-	// can't initiate a new jump if player still jumping
-	if (isJumping) {
+	const int heightToJump = 60;
+	const int startingYPos = startingPosition.getY();
+
+	if (!isJumping) {
+		if (transform.getY() != startingYPos) {
+			transform.setY(transform.getY() + 3);
+		}
+
 		return;
 	}
 
-	isJumping = true;
-	std::cout << "Jumping" << std::endl;
+
+	if (startingYPos - transform.getY() <= heightToJump) {
+		transform.setY(transform.getY() - 3);
+	}
+	
+	if (startingYPos - transform.getY() == heightToJump) {
+		// we have reached peak of jump
+		isJumping = false;
+	}
+
 }
 
-PlayerActor::PlayerActor(TextureManager* textureManager, InputHandler* inputHandler,const LoaderParams params)
-	: inputHandler(inputHandler), BaseActor(textureManager, params), speed(2, 2), acceleration(1, 0)
+PlayerActor::PlayerActor(TextureManager* textureManager, InputHandler* inputHandler, const LoaderParams params)
+	: inputHandler(inputHandler), BaseActor(textureManager, params), speed(2, 2), acceleration(1, 0), isJumping(false)
 {
 }
 
-void PlayerActor::update()
+void PlayerActor::update(SDL_Rect* camera)
 {
+	this->jump();
+
 	currentRow = 0;
 
 	if (inputHandler->isKeyDown(SDL_SCANCODE_LSHIFT)) {
@@ -39,7 +55,8 @@ void PlayerActor::update()
 	if (inputHandler->isKeyDown(SDL_SCANCODE_D)) {
 		flip = SDL_FLIP_NONE;
 
-		if (transform.getX() <= (Config::WIDTH - width)) {
+		// only allow movement to the right, up to the right-side of the screen (minus the textures width, so not to go off-screen)
+		if (transform.getX() < (Config::WIDTH + camera->w - width)) {
 			currentRow = (int)(SDL_GetTicks() / 100) % numberOfFrames;
 			transform.setX(transform.getX() + acceleration.getX());
 		}
@@ -50,8 +67,9 @@ void PlayerActor::update()
 		currentRow = 0;
 	}
 
-	if (inputHandler->isKeyDown(SDL_SCANCODE_SPACE)) {
-		this->jump();
+	// only allow player to jump if grounded
+	if (inputHandler->isKeyDown(SDL_SCANCODE_SPACE) && transform.getY() == startingPosition.getY()) {
+		isJumping = true;
 	}
 }
 

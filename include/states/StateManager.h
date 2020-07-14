@@ -11,5 +11,6 @@ private:
 public:
 	StateManager(IState* state);
 	void pushState(IState* state);
+	void render();
 };
 
